@@ -11,6 +11,7 @@ const UploadDocument = () => {
   const navigate = useNavigate();
 
   const [file, setFile] = useState(null);
+  const [selectedSection, setSelectedSection] = useState("full_paper");
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -29,10 +30,10 @@ const UploadDocument = () => {
     if (!file) {
       toastModel({
         title: "No file selected",
-        description: "Please select a document to process",
+        description: "Please select a research paper to analyze",
         variant: "destructive",
       });
-      toast.error("Please select a document to process", {
+      toast.error("Please select a research paper to analyze", {
         position: "top-right",
         autoClose: 3000,
       });
@@ -54,6 +55,7 @@ const UploadDocument = () => {
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("section", selectedSection);
 
     try {
       const response = await axios.post(apiUrl + "users/upload/", formData, {
@@ -70,15 +72,22 @@ const UploadDocument = () => {
           if (prev >= 100) {
             clearInterval(interval);
             setProcessing(false);
-            toast.success("Your document has been analyzed successfully", {
+            toast.success("Your paper has been analyzed successfully", {
               position: "top-right",
               autoClose: 3000,
             });
-            navigate("/viewer", {
+            const viewerId =
+              response?.data?.id ??
+              response?.data?.document_id ??
+              response?.data?.paper_id ??
+              "latest";
+
+            navigate(`/viewer/${viewerId}`, {
               state: {
                 uploadedFile: file,
                 ocrResult: response.data.extracted_text || "OCR text not available",
-                sometext:response.data.summarized_text || "Summarized text"
+                sometext: response.data.summarized_text || "Summarized text",
+                section: selectedSection,
               },
             });
             return 100;
@@ -101,14 +110,44 @@ const UploadDocument = () => {
       <div className="card-header">
         <h2 className="card-title">
           <Upload size={20} />
-          Upload Legal Document
+          Upload IEEE Research Paper
         </h2>
         <p className="card-description">
-          Upload a legal document to get a simplified summary
+          Upload an IEEE paper to extract structured insights and summaries
         </p>
       </div>
       <div className="card-content">
         <form onSubmit={handleSubmit}>
+          <div className="section-select">
+            <label
+              htmlFor="paper-section"
+              className="section-label"
+            >
+              Select Section to Analyze
+            </label>
+            <select
+              id="paper-section"
+              value={selectedSection}
+              onChange={(e) => setSelectedSection(e.target.value)}
+              disabled={processing}
+              className="section-dropdown"
+            >
+              <option value="full_paper">Full Paper</option>
+              <option value="title">Title</option>
+              <option value="abstract">Abstract</option>
+              <option value="introduction">Introduction</option>
+              <option value="related_work">Related Work</option>
+              <option value="methodology">Methodology</option>
+              <option value="dataset_experimental_setup">Dataset / Experimental Setup</option>
+              <option value="results">Results</option>
+              <option value="discussion">Discussion</option>
+              <option value="conclusion">Conclusion</option>
+              <option value="references">References</option>
+              <option value="citations">Citations</option>
+              <option value="figures_tables">Figures &amp; Tables</option>
+            </select>
+          </div>
+
           <div className="upload-area">
             <label htmlFor="document" className="upload-label">
               <Upload size={32} />
@@ -116,14 +155,14 @@ const UploadDocument = () => {
                 {file ? file.name : "Click to select or drag and drop"}
               </span>
               <span className="upload-info">
-                Supports PDF, DOCX, and TXT (Max 10MB)
+                Supports PDF and DOCX (Max 10MB)
               </span>
             </label>
             <input
               id="document"
               type="file"
               className="upload-input"
-              accept=".pdf,.docx,.doc,.txt"
+              accept=".pdf,.docx,.doc"
               onChange={handleFileChange}
             />
           </div>
@@ -148,7 +187,7 @@ const UploadDocument = () => {
             className="submit-btn"
             disabled={!file || processing}
           >
-            {processing ? "Processing..." : "Analyze Document"}
+            {processing ? "Processing..." : "Analyze Paper"}
           </button>
         </form>
       </div>

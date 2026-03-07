@@ -1,42 +1,33 @@
-import React, { useState } from 'react';
-import Sidebar from '../../component/Sidebar/Sidebar';
-import Stats from '../../component/Stats/Stats';
-import Instructions from '../../component/Instructions/Instructions';
-import UploadDocument from '../../component/UploadDocument/UploadDocument';
-import DocumentHistory from '../../component/DocumentHistory/DocumentHistory';
-import './Dashboard.css';
+import UploadDocument from "../../component/UploadDocument/UploadDocument";
+import DocumentHistory from "../../component/DocumentHistory/DocumentHistory";
+import Stats from "../../component/Stats/Stats";
 
-const Dashboard = () => {
-  const [stats, setStats] = useState({
-    documentsProcessed: 0,
-    timeSaved: 0,
-    aiAnalyses: 0,
-  });
+import "./Dashboard.css";
 
-  const updateStats = () => {
-    setStats((prevStats) => ({
-      documentsProcessed: prevStats.documentsProcessed + 1,
-      timeSaved: prevStats.timeSaved + 1, // Assuming 1 file saves 1 hr (adjust as needed)
-      aiAnalyses: prevStats.aiAnalyses + 2, // Assuming each document runs 2 AI analyses
-    }));
-  };
+export default function Dashboard() {
 
   return (
-    <div className="dashboard">
-      <Sidebar />
-      <div className="main-content-dash">
-        <div className="container">
-          <h1 className="dashboard-title">Document Dashboard</h1>
-          <Stats stats={stats} />
-          <div className="content-grid">
-            <Instructions />
-            <UploadDocument updateStats={updateStats} />
-          </div>
+    <div className="dashboard-page">
+      <div className="dashboard-header">
+        <h1 className="page-title">IEEE Paper Analyzer</h1>
+        <p className="page-subtitle">
+          Analyze IEEE research papers using AI to extract summaries, technical insights, and key contributions.
+        </p>
+      </div>
+
+      <div className="dashboard-grid">
+        <section className="dashboard-stats">
+          <Stats />
+        </section>
+
+        <section className="dashboard-upload">
+          <UploadDocument />
+        </section>
+
+        <section className="dashboard-history">
           <DocumentHistory />
-        </div>
+        </section>
       </div>
     </div>
   );
-};
-
-export default Dashboard;
+}

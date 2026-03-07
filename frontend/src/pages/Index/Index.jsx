@@ -1,83 +1,67 @@
-// Index.jsx
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import Navbar from '../../component/Navbar/Navbar'; 
-import Hero from '../../component/Hero/Hero';    
+import Navbar from '../../component/Navbar/Navbar';
+import Hero from '../../component/Hero/Hero';
 import Features from '../../component/Features/Features';
-import HowItWorks from '../../component/HowItWorks/HowItWorks';
-import UseCases from '../../component/UseCases/UseCases';
-import { ArrowRight, FileText } from 'lucide-react';
+import { ArrowRight, BookOpen } from 'lucide-react';
 import './Index.css';
 
 const Index = () => {
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
   return (
     <div className="page-wrapper">
       <Navbar />
-      
       <main className="main-content">
         <Hero />
         <Features />
-        <HowItWorks />
-        <UseCases />
-        
+
         {/* CTA Section */}
         <section className="cta-section">
           <div className="section-container">
             <div className="cta-content">
-              <div className="cta-gradient"></div>
-              <h2 className="cta-title">Ready to Simplify Legal Documents?</h2>
+              <div className="cta-glow"></div>
+              <div className="cta-badge">Start Analyzing</div>
+              <h2 className="cta-title">Ready to Extract Insights from IEEE Papers?</h2>
               <p className="cta-text">
-                Join thousands of NGOs and citizens making legal documents accessible and actionable through AI-powered analysis.
+                Upload any IEEE Xplore paper and get instant structured analysis —
+                authors, keywords, methodology, results, and citations in seconds.
               </p>
               <div className="cta-buttons">
                 <Link to="/register">
                   <button className="btn btn-primary">
                     <span className="btn-content">
-                      Upload Your First Document
-                      <ArrowRight size={16} className="btn-arrow" />
+                      Upload Your First Paper
+                      <ArrowRight size={15} className="btn-arrow" />
                     </span>
                   </button>
                 </Link>
                 <Link to="/login">
-                  <button className="btn btn-outline">
-                    Sign In
-                  </button>
+                  <button className="btn btn-outline">Sign In</button>
                 </Link>
               </div>
             </div>
           </div>
         </section>
       </main>
-      
-      {/* Footer */}
+
       <footer className="footer">
         <div className="section-container">
           <div className="footer-content">
             <div className="footer-left">
               <Link to="/" className="footer-logo">
-                <div className="logo-icon">
-                  <FileText size={16} />
-                </div>
-                <span className="logo-text">LegiFy</span>
+                <div className="logo-icon"><BookOpen size={15} /></div>
+                <span className="logo-text">IEEE<span className="logo-accent">Analyze</span></span>
               </Link>
-              <p className="footer-text">
-                Making legal information accessible to everyone.
-              </p>
+              <p className="footer-text">AI-powered analysis for IEEE research papers.</p>
             </div>
-            
             <div className="footer-right">
               <div className="footer-links">
                 <Link to="/about" className="footer-link">About</Link>
                 <Link to="/features" className="footer-link">Features</Link>
                 <Link to="/contact" className="footer-link">Contact</Link>
               </div>
-              <p className="footer-copyright">
-                © {new Date().getFullYear()} LegiFy. All rights reserved.
-              </p>
+              <p className="footer-copyright">© {new Date().getFullYear()} IEEEAnalyze. All rights reserved.</p>
             </div>
           </div>
         </div>

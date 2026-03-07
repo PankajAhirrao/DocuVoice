@@ -15,23 +15,23 @@ const Instructions = () => {
       <div className="card-content">
         <div className="instruction-item">
           <div className="step-number">1</div>
-          <h3>Upload Document</h3>
-          <p>Upload any legal document in PDF, DOCX, or TXT format.</p>
+          <h3>Upload Paper</h3>
+          <p>Upload an IEEE research paper in PDF or DOCX format.</p>
         </div>
         <div className="instruction-item">
           <div className="step-number">2</div>
-          <h3>Analyze Content</h3>
-          <p>Our AI analyzes the document to identify key legal points.</p>
+          <h3>Analyze Sections</h3>
+          <p>Choose a section (abstract, methodology, results, etc.) for targeted analysis.</p>
         </div>
         <div className="instruction-item">
           <div className="step-number">3</div>
           <h3>Get Summary</h3>
-          <p>Receive a simplified version that preserves legal context.</p>
+          <p>Get structured summaries, contributions, keywords, and citations.</p>
         </div>
         <div className="instruction-item">
           <div className="step-number">4</div>
           <h3>Chat & Learn</h3>
-          <p>Ask questions about the document to understand it better.</p>
+          <p>Ask questions about the paper and explore methodology and results quickly.</p>
         </div>
       </div>
     </div>

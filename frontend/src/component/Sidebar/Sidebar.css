@@ -1,90 +1,36 @@
 /* Sidebar.css */
-.sidebar {
-    width: 250px;
-    background: #f8fafc;
-    border-right: 1px solid #e2e8f0;
-    padding: 1rem;
-    position: fixed;
-    height: 100%;
-  }
-  
-  .sidebar-header {
-    height: 3.5rem;
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 0 1rem;
-  }
-  
-  .sidebar-header h2 {
-    font-size: 1.125rem;
-    font-weight: 600;
-  }
-  
-  .sidebar-menu {
-    margin-top: 1rem;
-  }
-  
-  .sidebar-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    width: 100%;
-    background: none;
-    border: none;
-    text-align: left;
-    cursor: pointer;
-    transition: background 0.3s ease;
-    border-radius: 10px;
-  }
-  
-  .sidebar-item:hover {
-    background: #e5e7eb;
-  }
-  
-  .logout-btn {
-    margin-top: 4rem;
-    color: #ef4444;
-  }
-  
-  .logout-btn:hover {
-    background: #fee2e2;
-  }
-
-  .language-dropdown {
-    margin-left: 10px;
-    padding: 5px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-  
-  /* Hide the Google Translate top bar */
-.goog-te-banner-frame {
-  display: none !important;
-}
-
-body {
-  top: 0px !important; /* Prevents page from shifting */
-}
-
-/* Hide Google Translate pop-up logo */
-.goog-logo-link, .goog-te-gadget span, .goog-te-balloon-frame {
-  display: none !important;
-}
-
-/* Remove second dropdown */
-.goog-te-gadget {
-  display: inline-block !important;
-}
-
-/* Style dropdown */
-#google_translate_element select {
-  background: #222;
-  color: white;
-  border: 1px solid white;
-  padding: 5px;
-  border-radius: 5px;
+.sidebar { width: 100%; padding: 12px; }
+.sidebar-header { height: 48px; display: flex; align-items: center; padding: 0 12px; margin-bottom: 8px; }
+.sidebar-header h2 { font-size: 1rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+.sidebar-header h2 span { color: var(--primary); }
+.sidebar-menu { margin-top: 0.5rem; }
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 10px 12px;
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  text-align: left;
   cursor: pointer;
+  transition: all 0.15s ease;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-decoration: none;
 }
+.sidebar-item:hover {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.12);
+  color: var(--text);
+}
+.logout-btn { margin-top: 3rem; color: #e05555; }
+.logout-btn:hover { background: rgba(224,85,85,0.08); color: #ff7070; }
+#google_translate_element { padding: 0 0.5rem 0.5rem; }
+.goog-te-banner-frame { display: none !important; }
+body { top: 0px !important; }
+.goog-logo-link, .goog-te-gadget span { display: none !important; }
+.goog-te-gadget { display: inline-block !important; }
+#google_translate_element select { background: var(--card); color: var(--muted); border: 1px solid var(--border); padding: 6px 8px; border-radius: 10px; cursor: pointer; font-size: 0.85rem; width: 100%; }

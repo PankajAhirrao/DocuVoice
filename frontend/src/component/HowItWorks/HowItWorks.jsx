@@ -10,7 +10,7 @@ const HowItWorks = () => {
         <div className="section-header">
           <h2 className="section-title">How It Works</h2>
           <p className="section-subtitle">
-            Our streamlined process makes legal document analysis simple and interactive.
+            Our workflow makes IEEE research paper analysis fast, structured, and interactive.
           </p>
         </div>
         
@@ -22,8 +22,8 @@ const HowItWorks = () => {
             <div className="step step-right group">
               <div className="step-dot"></div>
               <span className="step-label">Step 1</span>
-              <h3 className="step-title">Upload Your Document</h3>
-              <p className="step-text">Simply drag and drop your legal document or browse your files to upload it to our secure platform.</p>
+              <h3 className="step-title">Upload Your Paper</h3>
+              <p className="step-text">Drag and drop your IEEE paper (PDF/DOCX) or browse your files to upload it securely.</p>
             </div>
             <div className="step-spacer"></div>
             
@@ -32,8 +32,8 @@ const HowItWorks = () => {
             <div className="step step-left group">
               <div className="step-dot"></div>
               <span className="step-label">Step 2</span>
-              <h3 className="step-title">Analyze Document</h3>
-              <p className="step-text">Our AI immediately begins analyzing your document, identifying key sections, obligations, and important clauses.</p>
+              <h3 className="step-title">Analyze Sections</h3>
+              <p className="step-text">Select a paper section (abstract, methodology, results, etc.) and generate targeted insights in seconds.</p>
             </div>
             
             {/* Step 3 */}
@@ -41,7 +41,7 @@ const HowItWorks = () => {
               <div className="step-dot"></div>
               <span className="step-label">Step 3</span>
               <h3 className="step-title">Get Clear Summary</h3>
-              <p className="step-text">Receive a comprehensive yet concise summary with highlighted key points, requirements, and actionable insights.</p>
+              <p className="step-text">Receive a concise summary with key contributions, technical keywords, and methodology highlights.</p>
             </div>
             <div className="step-spacer"></div>
             
@@ -51,7 +51,7 @@ const HowItWorks = () => {
               <div className="step-dot"></div>
               <span className="step-label">Step 4</span>
               <h3 className="step-title">Chat & Ask Questions</h3>
-              <p className="step-text">Ask specific questions about the document and get instant, accurate answers from our AI to deepen your understanding.</p>
+              <p className="step-text">Ask questions about the paper and get accurate answers grounded in the uploaded content.</p>
               <div className="step-extra">
                 <MessageSquare size={16} />
                 <span>Interactive Q&A available</span>

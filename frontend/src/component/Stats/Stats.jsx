@@ -36,14 +36,14 @@ const Stats = () => {
   }, []);
 
   // Calculate stats based on fetched data
-  const numDocuments = fileHistory.length; // Number of documents processed
-  const timeSaved = (numDocuments * 0.67).toFixed(1); // Random calc: 0.67 hours saved per document
-  const aiAnalyses = numDocuments * 2 + Math.floor(Math.random() * 10); // Random calc: 2 analyses per doc + random extra
+  const numPapers = fileHistory.length;
+  const timeSaved = (numPapers * 0.67).toFixed(1);
+  const aiInsights = numPapers * 2 + Math.floor(Math.random() * 10);
 
   const statsData = [
-    { title: "Documents Processed", value: numDocuments, icon: FileCheck, color: "#3b82f6" },
-    { title: "Time Saved", value: `${timeSaved} hrs`, icon: Clock, color: "#22c55e" },
-    { title: "AI Analyses", value: aiAnalyses, icon: Brain, color: "#9333ea" },
+    { title: "Total Papers Analyzed", value: numPapers, icon: FileCheck, color: "#3b82f6" },
+    { title: "Time Saved by AI", value: `${timeSaved} hrs`, icon: Clock, color: "#22c55e" },
+    { title: "AI Insights Generated", value: aiInsights, icon: Brain, color: "#9333ea" },
   ];
 
   return (
