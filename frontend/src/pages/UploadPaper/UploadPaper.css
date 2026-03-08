@@ -1,0 +1,12 @@
+.upload-paper-page {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.upload-paper-header {
+  margin-bottom: var(--gap);
+}
+
+.upload-paper-content {
+  display: block;
+}

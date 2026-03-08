@@ -13,22 +13,22 @@ export default function Sidebar() {
       </div>
 
       <div className="sidebar-menu">
-        <Link className="sidebar-item" to="/">
+        <Link className="sidebar-item" to="/dashboard">
           <LayoutDashboard size={18} />
           Dashboard
         </Link>
 
-        <Link className="sidebar-item" to="/">
+        <Link className="sidebar-item" to="/upload">
           <Upload size={18} />
           Upload Paper
         </Link>
 
-        <Link className="sidebar-item" to="/">
+        <Link className="sidebar-item" to="/library">
           <Library size={18} />
           Paper Library
         </Link>
 
-        <Link className="sidebar-item" to="/">
+        <Link className="sidebar-item" to="/history">
           <History size={18} />
           Analysis History
         </Link>

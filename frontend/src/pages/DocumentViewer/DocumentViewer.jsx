@@ -90,7 +90,7 @@ export default function DocumentViewer() {
     return {
       paper_id: id,
       section: selectedSection,
-      text: extractedText || undefined,
+      text: id ? undefined : extractedText || undefined,
     };
   }, [id, selectedSection, extractedText]);
 
@@ -116,10 +116,7 @@ export default function DocumentViewer() {
     setError("");
     try {
       if (tabKey === "summary") {
-        const data = await callApi("users/summarize/", {
-          ...contextPayload,
-          force_refresh: true,
-        });
+        const data = await callApi("users/summarize/", contextPayload);
         setResults((prev) => ({ ...prev, summary: data?.summary ?? data?.summarized_text ?? "" }));
         return;
       }

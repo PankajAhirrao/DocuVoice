@@ -1,0 +1,12 @@
+.analysis-history-page {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.analysis-history-header {
+  margin-bottom: var(--gap);
+}
+
+.analysis-history-content {
+  display: block;
+}

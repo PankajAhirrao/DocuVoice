@@ -1,0 +1,20 @@
+.paper-library-page {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.paper-library-header {
+  margin-bottom: var(--gap);
+}
+
+.paper-library-grid {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1024px) {
+  .paper-library-grid {
+    grid-template-columns: 1fr;
+  }
+}

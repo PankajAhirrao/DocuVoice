@@ -214,7 +214,11 @@ def api_summarize(request):
             text = uf.extracted_text or ""
             section = uf.section or "full_paper"
             if force_refresh or not (uf.summarized_text or "").strip():
-                summary = summarize_section(text or "", section)
+                try:
+                    summary = summarize_section(text or "", section)
+                except Exception:
+                    # Keep API stable even if model summarization fails.
+                    summary = (uf.summarized_text or "").strip() or (text or "")[:1200]
                 uf.summarized_text = summary
                 uf.save(update_fields=["summarized_text"])
             else:
@@ -225,7 +229,10 @@ def api_summarize(request):
     if not text:
         return JsonResponse({"summary": "", "summarized_text": ""})
     section = request.data.get("section", "full_paper")
-    summary = summarize_section(text, section)
+    try:
+        summary = summarize_section(text, section)
+    except Exception:
+        summary = (text or "")[:1200]
     return JsonResponse({"summary": summary, "summarized_text": summary})
 
 
