@@ -17,6 +17,8 @@ class UserFile(models.Model):
 
     # Optional: Store the extracted text (if needed)
     extracted_text = models.TextField(blank=True, null=True)
+    summarized_text = models.TextField(blank=True, null=True)
+    section = models.CharField(max_length=64, default="full_paper", blank=True)
 
     def __str__(self):
         """String representation of the model."""

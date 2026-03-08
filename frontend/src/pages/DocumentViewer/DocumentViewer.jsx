@@ -24,10 +24,11 @@ export default function DocumentViewer() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const uploadedFile = location?.state?.uploadedFile ?? null;
-  const extractedText = location?.state?.ocrResult ?? "";
-  const initialSummary = location?.state?.sometext ?? "";
-  const selectedSection = location?.state?.section ?? "full_paper";
+  const [uploadedFile, setUploadedFile] = useState(location?.state?.uploadedFile ?? null);
+  const [extractedText, setExtractedText] = useState(location?.state?.ocrResult ?? "");
+  const [initialSummary, setInitialSummary] = useState(location?.state?.sometext ?? "");
+  const [selectedSection, setSelectedSection] = useState(location?.state?.section ?? "full_paper");
+  const [docLoaded, setDocLoaded] = useState(false);
 
   const previewUrl = useMemo(() => {
     if (!uploadedFile) return "";
@@ -41,11 +42,35 @@ export default function DocumentViewer() {
     };
   }, [previewUrl]);
 
+  useEffect(() => {
+    if (docLoaded || !id || !apiUrl) return;
+    const hasState = location?.state?.uploadedFile || location?.state?.ocrResult || location?.state?.sometext;
+    if (hasState) {
+      setDocLoaded(true);
+      return;
+    }
+    const authToken = localStorage.getItem("authToken");
+    if (!authToken) {
+      setDocLoaded(true);
+      return;
+    }
+    axios
+      .get(`${apiUrl}users/document/${id}/`, { headers: { Authorization: `Token ${authToken}` } })
+      .then((res) => {
+        setExtractedText(res.data.extracted_text || "");
+        setInitialSummary(res.data.summarized_text || "");
+        setSelectedSection(res.data.section || "full_paper");
+        setUploadedFile({ name: res.data.file_name }); // No blob for history; show name only
+      })
+      .catch(() => {})
+      .finally(() => setDocLoaded(true));
+  }, [id, apiUrl, docLoaded, location?.state]);
+
   const [activeTab, setActiveTab] = useState("summary");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [results, setResults] = useState(() => ({
-    summary: initialSummary,
+    summary: location?.state?.sometext ?? "",
     key_contributions: null,
     technical_keywords: null,
     generated_questions: null,
@@ -78,7 +103,12 @@ export default function DocumentViewer() {
 
   const fetchTabData = async (tabKey) => {
     // Avoid re-fetching if we already have data for the tab
-    if (results[tabKey] !== null && results[tabKey] !== undefined && results[tabKey] !== "") {
+    if (
+      tabKey !== "summary" &&
+      results[tabKey] !== null &&
+      results[tabKey] !== undefined &&
+      results[tabKey] !== ""
+    ) {
       return;
     }
 
@@ -86,27 +116,30 @@ export default function DocumentViewer() {
     setError("");
     try {
       if (tabKey === "summary") {
-        const data = await callApi("summarize/", contextPayload);
+        const data = await callApi("users/summarize/", {
+          ...contextPayload,
+          force_refresh: true,
+        });
         setResults((prev) => ({ ...prev, summary: data?.summary ?? data?.summarized_text ?? "" }));
         return;
       }
       if (tabKey === "generated_questions") {
-        const data = await callApi("generate-qa/", contextPayload);
+        const data = await callApi("users/generate-qa/", contextPayload);
         setResults((prev) => ({ ...prev, generated_questions: data?.questions ?? data ?? [] }));
         return;
       }
       if (tabKey === "technical_keywords") {
-        const data = await callApi("extract-keywords/", contextPayload);
+        const data = await callApi("users/extract-keywords/", contextPayload);
         setResults((prev) => ({ ...prev, technical_keywords: data?.keywords ?? data ?? [] }));
         return;
       }
       if (tabKey === "citations_extracted") {
-        const data = await callApi("extract-citations/", contextPayload);
+        const data = await callApi("users/extract-citations/", contextPayload);
         setResults((prev) => ({ ...prev, citations_extracted: data?.citations ?? data ?? [] }));
         return;
       }
       if (tabKey === "key_contributions") {
-        const data = await callApi("extract-contributions/", contextPayload);
+        const data = await callApi("users/extract-contributions/", contextPayload);
         setResults((prev) => ({
           ...prev,
           key_contributions: data?.contributions ?? data?.key_contributions ?? data ?? [],
@@ -114,7 +147,7 @@ export default function DocumentViewer() {
         return;
       }
       if (tabKey === "methodology_insights") {
-        const data = await callApi("methodology-insights/", contextPayload);
+        const data = await callApi("users/methodology-insights/", contextPayload);
         setResults((prev) => ({
           ...prev,
           methodology_insights: data?.insights ?? data?.methodology ?? data ?? "",
@@ -122,7 +155,7 @@ export default function DocumentViewer() {
         return;
       }
       if (tabKey === "read_aloud") {
-        const data = await callApi("read-aloud/", contextPayload);
+        const data = await callApi("users/read-aloud/", contextPayload);
         setResults((prev) => ({ ...prev, read_aloud: data ?? {} }));
         return;
       }
@@ -135,9 +168,35 @@ export default function DocumentViewer() {
   };
 
   useEffect(() => {
+    if (docLoaded && (extractedText || initialSummary)) {
+      setResults((prev) => (prev.summary ? prev : { ...prev, summary: initialSummary }));
+    }
+  }, [docLoaded, initialSummary, extractedText]);
+
+  useEffect(() => {
     fetchTabData(activeTab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, id, selectedSection]);
+
+  const handleRegenerateSummary = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await callApi("users/summarize/", {
+        ...contextPayload,
+        force_refresh: true,
+      });
+      setResults((prev) => ({
+        ...prev,
+        summary: data?.summary ?? data?.summarized_text ?? "",
+      }));
+    } catch (e) {
+      const message = e?.response?.data?.detail || e?.message || "Failed to regenerate summary";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSpeak = () => {
     const textForSpeech =
@@ -230,6 +289,15 @@ export default function DocumentViewer() {
                 {activeTab === "summary" && (
                   <div className="ocr-result">
                     <h3 style={{ marginTop: 0 }}>Summary</h3>
+                    <div className="action-buttons" style={{ justifyContent: "flex-start", marginTop: 0, marginBottom: "1rem" }}>
+                      <button
+                        className="action-btn chat-btn"
+                        onClick={handleRegenerateSummary}
+                        disabled={loading}
+                      >
+                        {loading ? "Regenerating..." : "Regenerate Summary"}
+                      </button>
+                    </div>
                     <p className="ocr-text">{results.summary || "No summary available yet."}</p>
                   </div>
                 )}
@@ -282,11 +350,17 @@ export default function DocumentViewer() {
                 {activeTab === "methodology_insights" && (
                   <div className="ocr-result">
                     <h3 style={{ marginTop: 0 }}>Methodology Insights</h3>
-                    {typeof results.methodology_insights === "string" && results.methodology_insights ? (
+                    {Array.isArray(results.methodology_insights) && results.methodology_insights.length > 0 ? (
+                      <ul>
+                        {results.methodology_insights.map((m, idx) => (
+                          <li key={idx}>{typeof m === "string" ? m : JSON.stringify(m)}</li>
+                        ))}
+                      </ul>
+                    ) : (typeof results.methodology_insights === "string" && results.methodology_insights ? (
                       <p className="ocr-text">{results.methodology_insights}</p>
                     ) : (
                       <div className="no-content">No methodology insights available yet.</div>
-                    )}
+                    ))}
                   </div>
                 )}
 

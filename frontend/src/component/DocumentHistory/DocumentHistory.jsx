@@ -1,6 +1,39 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import "./DocumentHistory.css";
 
+function displayFileName(name) {
+  if (!name) return "Untitled";
+  const parts = name.split("_");
+  if (parts.length >= 3) return parts.slice(2).join("_");
+  return name;
+}
+
 export default function DocumentHistory() {
+  const apiUrl = import.meta.env.VITE_API_URL?.replace(/\/?$/, "/");
+  const authToken = localStorage.getItem("authToken");
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authToken || !apiUrl) {
+      setLoading(false);
+      return;
+    }
+    axios
+      .get(`${apiUrl}users/history/`, {
+        headers: { Authorization: `Token ${authToken}` },
+      })
+      .then((res) => setHistory(res.data.file_history || []))
+      .catch(() => setHistory([]))
+      .finally(() => setLoading(false));
+  }, [apiUrl, authToken]);
+
+  const handleView = (file) => {
+    navigate(`/viewer/${file.id}`, { state: null });
+  };
 
   return (
     <div className="history-card">
@@ -12,39 +45,38 @@ export default function DocumentHistory() {
       </div>
 
       <div className="card-content">
-        <table className="history-table">
-          <thead>
-            <tr>
-              <th>Paper</th>
-              <th>Status</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Transformer based text summarization</td>
-              <td>
-                <span className="status">Ready</span>
-              </td>
-              <td>
-                <a className="view-btn" href="#">
-                  View
-                </a>
-              </td>
-            </tr>
-            <tr>
-              <td>Graph Neural Networks for Citation Analysis</td>
-              <td>
-                <span className="status">Ready</span>
-              </td>
-              <td>
-                <a className="view-btn" href="#">
-                  View
-                </a>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        {loading ? (
+          <div className="history-loading">Loading history…</div>
+        ) : history.length === 0 ? (
+          <div className="history-empty">No papers analyzed yet. Upload a paper to get started.</div>
+        ) : (
+          <table className="history-table">
+            <thead>
+              <tr>
+                <th>Paper</th>
+                <th>Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {history.map((file) => (
+                <tr key={file.id}>
+                  <td>{displayFileName(file.file_name)}</td>
+                  <td>{file.uploaded_at}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="view-btn"
+                      onClick={() => handleView(file)}
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

@@ -33,7 +33,7 @@ export default function Sidebar() {
           Analysis History
         </Link>
 
-        <Link className="sidebar-item" to="/">
+        <Link className="sidebar-item" to="/settings">
           <Settings size={18} />
           Settings
         </Link>

@@ -8,7 +8,8 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.conf import settings
 import os
-from .utilities.summarizer import summarize_legal_document
+from .utilities.ieee_extractor import extract_and_analyze_section
+from .utilities.ieee_analyzer import analyze_ieee_section
 from django.views.decorators.csrf import csrf_exempt
 import requests
 from django.core.paginator import Paginator
@@ -17,7 +18,6 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 import traceback
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
-from .utilities.text_extractor import extract_text
 from rest_framework.response import Response
 from rest_framework.serializers import ModelSerializer
 from datetime import  datetime
@@ -32,6 +32,14 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
 from dotenv import load_dotenv
 from .utilities.ncr import extract_legal_entities
+from .utilities.ieee_ai_analysis import (
+    extract_contributions,
+    extract_keywords,
+    generate_questions,
+    get_methodology_insights,
+    extract_citations as extract_citations_ai,
+    summarize_section,
+)
 load_dotenv()
 
 # Create your views here.
@@ -140,35 +148,177 @@ def file_upload(request):
     # Generate a unique file name: userid_timestamp_filename
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     unique_file_name = f"{request.user.id}_{timestamp}_{uploaded_file.name}"
-    file_path = os.path.join(settings.MEDIA_ROOT, 'uploads', unique_file_name)
+    # Use forward slashes for URLs/storage keys (works on Windows too)
+    file_rel_path = f"uploads/{unique_file_name}"
+    file_abs_path = os.path.join(settings.MEDIA_ROOT, "uploads", unique_file_name)
 
     # Save the file
-    path = default_storage.save(file_path, ContentFile(uploaded_file.read()))
-
-    # Save file metadata in the database
-    user_file = UserFile.objects.create(
-        user=request.user,
-        file_name=unique_file_name,
-        file_path=file_path,
-    )
+    default_storage.save(file_rel_path, ContentFile(uploaded_file.read()))
 
     try:
-        extracted_text = extract_text(file_path)
-        # legal_res = summarize_text(extracted_text,2)
-        legal_res = summarize_legal_document(extracted_text)
+        # Get content extraction section (Full Paper, Abstract, Methodology, etc.)
+        section_key = request.POST.get("section", "full_paper")
 
+        full_text, extracted_text = extract_and_analyze_section(file_abs_path, section_key)
+        summarized_text = summarize_section(extracted_text, section_key)
+
+        # Save file metadata in the database (with extracted/summarized content)
+        user_file = UserFile.objects.create(
+            user=request.user,
+            file_name=unique_file_name,
+            file_path=file_rel_path,
+            extracted_text=extracted_text,
+            summarized_text=summarized_text,
+            section=section_key,
+        )
 
         response_data = {
-            "message": "File uploaded and text extracted successfully!",
-            "file_url": f"{settings.MEDIA_URL}uploads/{unique_file_name}",
-            "summarized_text": legal_res,
+            "message": "File uploaded and section analyzed successfully!",
+            "file_url": f"{settings.MEDIA_URL}{file_rel_path}",
+            "summarized_text": summarized_text,
             "extracted_text": extracted_text,
-            "file_id": user_file.id  # Return the file ID for future reference
+            "file_id": user_file.id,
+            "id": user_file.id,
+            "section": section_key,
         }
         return JsonResponse(response_data, status=201)
     except Exception as e:
         return JsonResponse({"error": f"Error extracting text: {str(e)}"}, status=500)
-    
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_document(request, id):
+    """Fetch document content by ID for history → viewer flow."""
+    user_file = get_object_or_404(UserFile, id=id, user=request.user)
+    return JsonResponse({
+        "id": user_file.id,
+        "file_name": user_file.file_name,
+        "extracted_text": user_file.extracted_text or "",
+        "summarized_text": user_file.summarized_text or "",
+        "section": user_file.section or "full_paper",
+        "uploaded_at": user_file.uploaded_at.strftime("%Y-%m-%d %H:%M:%S"),
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_summarize(request):
+    """Summarize or return existing summary for document text."""
+    text = request.data.get("text") or request.data.get("content")
+    paper_id = request.data.get("paper_id")
+    force_refresh = str(request.data.get("force_refresh", "false")).lower() in ("1", "true", "yes")
+    if not text and paper_id:
+        try:
+            uf = UserFile.objects.get(id=paper_id, user=request.user)
+            text = uf.extracted_text or ""
+            section = uf.section or "full_paper"
+            if force_refresh or not (uf.summarized_text or "").strip():
+                summary = summarize_section(text or "", section)
+                uf.summarized_text = summary
+                uf.save(update_fields=["summarized_text"])
+            else:
+                summary = uf.summarized_text
+            return JsonResponse({"summary": summary, "summarized_text": summary})
+        except UserFile.DoesNotExist:
+            return JsonResponse({"error": "Document not found"}, status=404)
+    if not text:
+        return JsonResponse({"summary": "", "summarized_text": ""})
+    section = request.data.get("section", "full_paper")
+    summary = summarize_section(text, section)
+    return JsonResponse({"summary": summary, "summarized_text": summary})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_extract_contributions(request):
+    text = request.data.get("text") or request.data.get("content")
+    paper_id = request.data.get("paper_id")
+    if not text and paper_id:
+        try:
+            uf = UserFile.objects.get(id=paper_id, user=request.user)
+            text = uf.extracted_text or ""
+        except UserFile.DoesNotExist:
+            return JsonResponse({"error": "Document not found"}, status=404)
+    contributions = extract_contributions(text or "")
+    return JsonResponse({"contributions": contributions, "key_contributions": contributions})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_extract_keywords(request):
+    text = request.data.get("text") or request.data.get("content")
+    paper_id = request.data.get("paper_id")
+    if not text and paper_id:
+        try:
+            uf = UserFile.objects.get(id=paper_id, user=request.user)
+            text = uf.extracted_text or ""
+        except UserFile.DoesNotExist:
+            return JsonResponse({"error": "Document not found"}, status=404)
+    keywords = extract_keywords(text or "")
+    return JsonResponse({"keywords": keywords})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_generate_qa(request):
+    text = request.data.get("text") or request.data.get("content")
+    paper_id = request.data.get("paper_id")
+    if not text and paper_id:
+        try:
+            uf = UserFile.objects.get(id=paper_id, user=request.user)
+            text = uf.extracted_text or ""
+        except UserFile.DoesNotExist:
+            return JsonResponse({"error": "Document not found"}, status=404)
+    questions = generate_questions(text or "")
+    return JsonResponse({"questions": questions})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_methodology_insights(request):
+    text = request.data.get("text") or request.data.get("content")
+    paper_id = request.data.get("paper_id")
+    if not text and paper_id:
+        try:
+            uf = UserFile.objects.get(id=paper_id, user=request.user)
+            text = uf.extracted_text or ""
+        except UserFile.DoesNotExist:
+            return JsonResponse({"error": "Document not found"}, status=404)
+    insights = get_methodology_insights(text or "")
+    return JsonResponse({"insights": insights, "methodology": insights})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_extract_citations(request):
+    text = request.data.get("text") or request.data.get("content")
+    paper_id = request.data.get("paper_id")
+    if not text and paper_id:
+        try:
+            uf = UserFile.objects.get(id=paper_id, user=request.user)
+            text = uf.extracted_text or ""
+        except UserFile.DoesNotExist:
+            return JsonResponse({"error": "Document not found"}, status=404)
+    citations = extract_citations_ai(text or "")
+    return JsonResponse({"citations": citations})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_read_aloud(request):
+    """Return text suitable for read-aloud (summary or extracted)."""
+    text = request.data.get("text") or request.data.get("content")
+    paper_id = request.data.get("paper_id")
+    if not text and paper_id:
+        try:
+            uf = UserFile.objects.get(id=paper_id, user=request.user)
+            text = (uf.summarized_text or uf.extracted_text or "")
+        except UserFile.DoesNotExist:
+            return JsonResponse({"error": "Document not found"}, status=404)
+    return JsonResponse({"text": text or "", "read_aloud": text or ""})
+
+
 @api_view(['GET'])  # Use Django REST Framework
 @permission_classes([IsAuthenticated])  # Ensure user is authenticated
 def file_history(request):
@@ -205,9 +355,11 @@ def cleanup_files(request):
     user_files = UserFile.objects.filter(user=request.user)
     
     for user_file in user_files:
-        file_path = user_file.file_path  
-        if file_path and os.path.exists(file_path):
-            os.remove(file_path)  
+        file_path = user_file.file_path
+        if file_path:
+            abs_path = os.path.join(settings.MEDIA_ROOT, file_path)
+            if os.path.exists(abs_path):
+                os.remove(abs_path)
         user_file.delete()  
 
     return JsonResponse({"message": "Files cleaned up successfully!"}, status=200)

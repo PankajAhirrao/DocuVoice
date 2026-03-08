@@ -84,6 +84,9 @@ venv\Scripts\activate   # Windows
 # Install dependencies
 pip install -r requirements.txt
 
+# One-time: download local offline summarization model (requires internet once)
+python prepare_offline_model.py
+
 # Run migrations (if applicable)
 python manage.py migrate
 

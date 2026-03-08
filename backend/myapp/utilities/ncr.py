@@ -1,40 +1,43 @@
 import re
-import spacy
 from collections import defaultdict
 
-# Load a basic spaCy model
+# Optional spaCy (keep app runnable without it)
 try:
-    nlp = spacy.load("en_core_web_sm")
-except:
-    # If model not installed, download it
-    import os
-    os.system("python -m spacy download en_core_web_sm")
-    nlp = spacy.load("en_core_web_sm")
+    import spacy  # type: ignore
+    try:
+        nlp = spacy.load("en_core_web_sm")
+    except Exception:
+        nlp = None
+except Exception:
+    spacy = None
+    nlp = None
 
 def extract_legal_entities(text):
-    # Process with spaCy for basic entities
-    doc = nlp(text)
-    
     # Initialize entity dictionary
     entities = defaultdict(list)
-    
-    # Extract entities from spaCy
-    for ent in doc.ents:
-        if ent.label_ == "DATE":
-            if ent.text not in entities["DATE"]:
-                entities["DATE"].append(ent.text)
-        elif ent.label_ == "PERSON":
-            if ent.text not in entities["PERSON"]:
-                entities["PERSON"].append(ent.text)
-        elif ent.label_ == "ORG":
-            if ent.text not in entities["ORGANIZATION"]:
-                entities["ORGANIZATION"].append(ent.text)
-        elif ent.label_ == "GPE":
-            if ent.text not in entities["LOCATION"]:
-                entities["LOCATION"].append(ent.text)
-        elif ent.label_ == "MONEY":
-            if ent.text not in entities["MONEY"]:
-                entities["MONEY"].append(ent.text)
+
+    # Extract entities from spaCy if available
+    if nlp is not None and text:
+        try:
+            doc = nlp(text)
+            for ent in doc.ents:
+                if ent.label_ == "DATE":
+                    if ent.text not in entities["DATE"]:
+                        entities["DATE"].append(ent.text)
+                elif ent.label_ == "PERSON":
+                    if ent.text not in entities["PERSON"]:
+                        entities["PERSON"].append(ent.text)
+                elif ent.label_ == "ORG":
+                    if ent.text not in entities["ORGANIZATION"]:
+                        entities["ORGANIZATION"].append(ent.text)
+                elif ent.label_ == "GPE":
+                    if ent.text not in entities["LOCATION"]:
+                        entities["LOCATION"].append(ent.text)
+                elif ent.label_ == "MONEY":
+                    if ent.text not in entities["MONEY"]:
+                        entities["MONEY"].append(ent.text)
+        except Exception:
+            pass
     
     # Improved pattern-based extraction for legal-specific entities
     

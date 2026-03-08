@@ -48,3 +48,6 @@ node_modules/
 # Temporary files
 *.tmp
 *.swp
+
+# Local offline model weights (downloaded once via prepare_offline_model.py)
+models/

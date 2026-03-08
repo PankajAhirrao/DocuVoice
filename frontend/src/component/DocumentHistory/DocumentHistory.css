@@ -13,3 +13,4 @@
 .status { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; background: rgba(34, 197, 94, 0.12); color: #16a34a; border: 1px solid rgba(34, 197, 94, 0.2); }
 .view-btn { padding: 6px 10px; background: rgba(37, 99, 235, 0.08); border: 1px solid rgba(37, 99, 235, 0.18); color: var(--primary); cursor: pointer; border-radius: 10px; font-size: 13px; font-weight: 800; transition: all 0.2s ease; text-decoration: none; }
 .view-btn:hover { background: rgba(37, 99, 235, 0.12); }
+.history-loading, .history-empty { padding: 2rem; text-align: center; color: var(--muted); font-size: 14px; }

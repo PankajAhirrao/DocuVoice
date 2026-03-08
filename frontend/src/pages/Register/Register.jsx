@@ -6,7 +6,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const Register = () => {
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const apiUrl = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/").replace(/\/?$/, "/");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,29 +36,23 @@ const Register = () => {
       return;
     }
 
-    // const formData = new FormData();
-    // formData.append("username", name);
-    // formData.append("email", email);
-    // formData.append("password", password);
-
-    await axios.post(`${apiUrl}users/create/`, {
-  username: name,
-  email: email,
-  password: password,
-});
-
-
-
     try {
       setIsLoading(true);
-      // await axios.post(`${apiUrl}users/create/`, formData);
+      await axios.post(`${apiUrl}users/create/`, {
+        username: name,
+        email: email,
+        password: password,
+      });
       setIsLoading(false);
       setSuccess(true);
       toast.success("Your account has been successfully created!", { position: "top-right", autoClose: 3000 });
-      setTimeout(() => navigate("/dashboard"), 2000);
+      setTimeout(() => navigate("/"), 2000);
     } catch (error) {
       setIsLoading(false);
-      toast.error("Registration failed. Please try again.", { position: "top-right", autoClose: 3000 });
+      toast.error(
+        error?.response?.data?.error || "Registration failed. Please try again.",
+        { position: "top-right", autoClose: 3000 }
+      );
     }
   };
 
@@ -118,7 +112,7 @@ const Register = () => {
                   <h2 className="success-title">Registration Successful!</h2>
                   <p className="success-text">Your account has been created successfully. You're being redirected to the dashboard.</p>
                   <div className="success-button">
-                    <Link to="/dashboard">
+                    <Link to="/">
                       <button className="btn">Continue to Dashboard</button>
                     </Link>
                   </div>
