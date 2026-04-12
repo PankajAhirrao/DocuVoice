@@ -4,9 +4,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FileText, ArrowLeft, Loader2 } from 'lucide-react';
 import './Login.css';
 import axios from 'axios';
+import { API } from '../../api.js';
 
 const Login = () => {
-  const apiUrl = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/").replace(/\/?$/, "/");
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -40,7 +40,7 @@ const handleSubmit = async (e) => {
 
   try {
     // 🔥 SEND JSON (NOT FormData)
-    const response = await axios.post(`${apiUrl}users/login/`, {
+    const response = await axios.post(`${API}/users/login/`, {
       username: username,
       password: password,
     });

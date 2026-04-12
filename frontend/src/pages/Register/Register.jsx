@@ -4,9 +4,9 @@ import { FileText, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
 import "./Register.css";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { API } from "../../api.js";
 
 const Register = () => {
-  const apiUrl = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/").replace(/\/?$/, "/");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,7 +38,7 @@ const Register = () => {
 
     try {
       setIsLoading(true);
-      await axios.post(`${apiUrl}users/create/`, {
+      await axios.post(`${API}/users/create/`, {
         username: name,
         email: email,
         password: password,

@@ -4,20 +4,20 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { User, Trash2, LogOut } from "lucide-react";
 import "./Settings.css";
+import { API } from "../../api.js";
 
 export default function Settings() {
-  const apiUrl = import.meta.env.VITE_API_URL?.replace(/\/?$/, "/");
   const authToken = localStorage.getItem("authToken");
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const [cleaning, setCleaning] = useState(false);
   const navigate = useNavigate();
 
   const handleCleanup = async () => {
-    if (!authToken || !apiUrl) return;
+    if (!authToken) return;
     if (!window.confirm("Delete all your uploaded papers and analysis history? This cannot be undone.")) return;
     setCleaning(true);
     try {
-      await axios.delete(`${apiUrl}users/cleanup/`, {
+      await axios.delete(`${API}/users/cleanup/`, {
         headers: { Authorization: `Token ${authToken}` },
       });
       toast.success("All files and history have been cleared.");
@@ -30,14 +30,14 @@ export default function Settings() {
   };
 
   const handleLogout = () => {
-    if (!authToken || !apiUrl) {
+    if (!authToken) {
       localStorage.removeItem("authToken");
       localStorage.removeItem("user");
       navigate("/login");
       return;
     }
     axios
-      .post(`${apiUrl}users/logout/`, {}, { headers: { Authorization: `Token ${authToken}` } })
+      .post(`${API}/users/logout/`, {}, { headers: { Authorization: `Token ${authToken}` } })
       .catch(() => {})
       .finally(() => {
         localStorage.removeItem("authToken");

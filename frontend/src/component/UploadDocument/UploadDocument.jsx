@@ -5,9 +5,9 @@ import "./UploadDocument.css";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { API } from "../../api.js";
 
 const UploadDocument = () => {
-  const apiUrl = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
 
   const [file, setFile] = useState(null);
@@ -58,7 +58,7 @@ const UploadDocument = () => {
     formData.append("section", selectedSection);
 
     try {
-      const response = await axios.post(apiUrl + "users/upload/", formData, {
+      const response = await axios.post(`${API}/users/upload/`, formData, {
         headers: {
           "Authorization": `Token ${authToken}`,
           "Content-Type": "multipart/form-data",

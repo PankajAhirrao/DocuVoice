@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./DocumentHistory.css";
+import { API } from "../../api.js";
 
 function displayFileName(name) {
   if (!name) return "Untitled";
@@ -11,25 +12,24 @@ function displayFileName(name) {
 }
 
 export default function DocumentHistory() {
-  const apiUrl = import.meta.env.VITE_API_URL?.replace(/\/?$/, "/");
   const authToken = localStorage.getItem("authToken");
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!authToken || !apiUrl) {
+    if (!authToken) {
       setLoading(false);
       return;
     }
     axios
-      .get(`${apiUrl}users/history/`, {
+      .get(`${API}/users/history/`, {
         headers: { Authorization: `Token ${authToken}` },
       })
       .then((res) => setHistory(res.data.file_history || []))
       .catch(() => setHistory([]))
       .finally(() => setLoading(false));
-  }, [apiUrl, authToken]);
+  }, [authToken]);
 
   const handleView = (file) => {
     navigate(`/viewer/${file.id}`, { state: null });

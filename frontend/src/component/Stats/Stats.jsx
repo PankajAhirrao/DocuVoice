@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { FileCheck, Clock, Brain } from 'lucide-react';
 import './Stats.css';
 import axios from 'axios';
+import { API } from '../../api.js';
 
 const Stats = () => {
-  const apiUrl = import.meta.env.VITE_API_URL;
   const [fileHistory, setFileHistory] = useState([]);
   
   // Fetch file history from the API
@@ -18,14 +18,15 @@ const Stats = () => {
         return;
       }
 
-      const response = await axios.get(`${apiUrl}users/history/`, {
+      const response = await axios.get(`${API}/users/history/`, {
         headers: {
           Authorization: `Token ${authToken}`,
         },
       });
 
-      setFileHistory(response.data.file_history); // Store file history
-      console.log("Fetched File History for Stats:", response.data.file_history);
+      const history = response.data?.file_history ?? [];
+      setFileHistory(history);
+      console.log("Fetched File History for Stats:", history);
     } catch (error) {
       console.error("Error fetching file history:", error);
     }
@@ -36,7 +37,7 @@ const Stats = () => {
   }, []);
 
   // Calculate stats based on fetched data
-  const numPapers = fileHistory.length;
+ const numPapers = fileHistory?.length || 0;
   const timeSaved = (numPapers * 0.67).toFixed(1);
   const aiInsights = numPapers * 2 + Math.floor(Math.random() * 10);
 

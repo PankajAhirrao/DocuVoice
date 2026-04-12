@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import "./DocumentViewer.css";
+import { API } from "../../api.js";
 
 const TABS = [
   { key: "summary", label: "Summary" },
@@ -13,13 +14,7 @@ const TABS = [
   { key: "read_aloud", label: "Read Aloud" },
 ];
 
-function normalizeApiBase(url) {
-  if (!url) return "";
-  return url.endsWith("/") ? url : `${url}/`;
-}
-
 export default function DocumentViewer() {
-  const apiUrl = normalizeApiBase(import.meta.env.VITE_API_URL);
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -43,7 +38,7 @@ export default function DocumentViewer() {
   }, [previewUrl]);
 
   useEffect(() => {
-    if (docLoaded || !id || !apiUrl) return;
+    if (docLoaded || !id) return;
     const hasState = location?.state?.uploadedFile || location?.state?.ocrResult || location?.state?.sometext;
     if (hasState) {
       setDocLoaded(true);
@@ -55,7 +50,7 @@ export default function DocumentViewer() {
       return;
     }
     axios
-      .get(`${apiUrl}users/document/${id}/`, { headers: { Authorization: `Token ${authToken}` } })
+      .get(`${API}/users/document/${id}/`, { headers: { Authorization: `Token ${authToken}` } })
       .then((res) => {
         setExtractedText(res.data.extracted_text || "");
         setInitialSummary(res.data.summarized_text || "");
@@ -64,7 +59,7 @@ export default function DocumentViewer() {
       })
       .catch(() => {})
       .finally(() => setDocLoaded(true));
-  }, [id, apiUrl, docLoaded, location?.state]);
+  }, [id, docLoaded, location?.state]);
 
   const [activeTab, setActiveTab] = useState("summary");
   const [loading, setLoading] = useState(false);
@@ -95,8 +90,7 @@ export default function DocumentViewer() {
   }, [id, selectedSection, extractedText]);
 
   const callApi = async (path, payload) => {
-    if (!apiUrl) throw new Error("API URL is not configured");
-    const url = `${apiUrl}${path}`.replace(/([^:]\/)\/+/g, "$1");
+    const url = `${API}/${path}`.replace(/([^:]\/)\/+/g, "$1");
     const response = await axios.post(url, payload, { headers: commonHeaders });
     return response.data;
   };

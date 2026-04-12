@@ -3,9 +3,9 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { Mic, Square, Upload, Send } from "lucide-react";
 import "./PdfQA.css";
+import { API } from "../../api.js";
 
 export default function PdfQA() {
-  const apiUrl = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/").replace(/\/?$/, "/");
   const [documentId, setDocumentId] = useState("");
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
@@ -30,7 +30,7 @@ export default function PdfQA() {
     setAnswer("");
     setAudioUrl("");
     try {
-      const { data } = await axios.post(`${apiUrl}upload-pdf/`, fd, {
+      const { data } = await axios.post(`${API}/upload-pdf/`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setDocumentId(data.document_id);
@@ -59,7 +59,7 @@ export default function PdfQA() {
     setAnswer("");
     setAudioUrl("");
     try {
-      const { data } = await axios.post(`${apiUrl}ask-question/`, fd, {
+      const { data } = await axios.post(`${API}/ask-question/`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setAnswer(data.answer || "");

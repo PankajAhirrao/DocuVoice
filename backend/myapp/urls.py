@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     create_user, get_users, get_user, update_user, delete_user,
-    file_upload, file_history, cleanup_files, get_document,
+    file_upload as upload_view, file_history, cleanup_files, get_document,
     user_login, user_logout, chat, getners,
     api_summarize, api_extract_contributions, api_extract_keywords,
     api_generate_qa, api_methodology_insights, api_extract_citations, api_read_aloud,
@@ -13,7 +13,7 @@ urlpatterns = [
     path('users/<int:id>/', get_user, name='get_user'),
     path('users/update/<int:id>/', update_user, name='update_user'),
     path('users/delete/<int:id>/', delete_user, name='delete_user'),
-    path('users/upload/', file_upload, name='file_upload'),
+    path('users/upload/', upload_view, name='file_upload'),
     path('users/cleanup/', cleanup_files, name='cleanup_files'),
     path('users/history/', file_history, name='file_history'),
     path('users/document/<int:id>/', get_document, name='get_document'),
