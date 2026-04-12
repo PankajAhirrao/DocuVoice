@@ -1,0 +1,79 @@
+.pdfqa-page {
+  padding: 1.5rem;
+  max-width: 720px;
+}
+.pdfqa-page h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+}
+.pdfqa-hint {
+  color: #64748b;
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+.pdfqa-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.pdfqa-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+.pdfqa-meta {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  word-break: break-all;
+  color: #475569;
+}
+.pdfqa-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-family: inherit;
+  resize: vertical;
+}
+.pdfqa-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+.pdfqa-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid #94a3b8;
+  background: #f8fafc;
+  cursor: pointer;
+}
+.pdfqa-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.pdfqa-btn-mic {
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+.pdfqa-btn-stop {
+  border-color: #ef4444;
+  color: #b91c1c;
+}
+.pdfqa-answer {
+  white-space: pre-wrap;
+  font-family: inherit;
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+.pdfqa-audio {
+  width: 100%;
+}
