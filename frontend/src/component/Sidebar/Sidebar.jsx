@@ -1,6 +1,6 @@
 import "./Sidebar.css";
 import { Link } from "react-router-dom";
-import { LayoutDashboard, Upload, Library, History, Settings } from "lucide-react";
+import { LayoutDashboard, Upload, Library, History, Settings, MessageCircleQuestion } from "lucide-react";
 
 export default function Sidebar() {
 
@@ -31,6 +31,11 @@ export default function Sidebar() {
         <Link className="sidebar-item" to="/history">
           <History size={18} />
           Analysis History
+        </Link>
+
+        <Link className="sidebar-item" to="/pdf-qa">
+          <MessageCircleQuestion size={18} />
+          PDF Q&amp;A
         </Link>
 
         <Link className="sidebar-item" to="/settings">

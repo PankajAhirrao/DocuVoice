@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.contrib.auth.models import User
@@ -63,15 +64,20 @@ def protected_view(request):
 @csrf_exempt
 @api_view(['POST'])
 def create_user(request):
-    if request.method == 'POST':
-        data = request.data;
-        print(data);
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    data = request.data
+    try:
         user = User.objects.create_user(
             username=data['username'],
             email=data['email'],
             password=data['password']
         )
-        return JsonResponse({'message': 'User created', 'id': user.id})
+    except KeyError as e:
+        return JsonResponse({'error': f'Missing field: {e.args[0]}'}, status=400)
+    except IntegrityError:
+        return JsonResponse({'error': 'Username or email already exists'}, status=400)
+    return JsonResponse({'message': 'User created', 'id': user.id})
 
 # Get All Users
 def get_users(request):

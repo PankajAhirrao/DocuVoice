@@ -9,6 +9,7 @@ import UploadPaper from "./pages/UploadPaper/UploadPaper";
 import PaperLibrary from "./pages/PaperLibrary/PaperLibrary";
 import AnalysisHistory from "./pages/AnalysisHistory/AnalysisHistory";
 import NotFound from "./pages/NotFound/NotFound";
+import PdfQA from "./pages/PdfQA/PdfQA";
 
 import Navbar from "./component/Navbar/Navbar";
 import Sidebar from "./component/Sidebar/Sidebar";
@@ -34,6 +35,7 @@ function App() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/pdf-qa" element={<PdfQA />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </main>
