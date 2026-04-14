@@ -10,6 +10,7 @@ export default function PdfQA() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
+  const [backendError, setBackendError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [asking, setAsking] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -29,6 +30,7 @@ export default function PdfQA() {
     setDocumentId("");
     setAnswer("");
     setAudioUrl("");
+    setBackendError("");
     try {
       const { data } = await axios.post(`${API}/upload-pdf/`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -36,7 +38,10 @@ export default function PdfQA() {
       setDocumentId(data.document_id);
       toast.success(`Indexed ${data.chunks} chunks`);
     } catch (err) {
-      toast.error(err.response?.data?.error || "Upload failed");
+      const message = err?.response?.data?.error || err?.message || "Upload failed";
+      console.error("[PdfQA:onUpload] backend error:", err?.response?.data || err);
+      setBackendError(message);
+      toast.error(message);
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -58,16 +63,20 @@ export default function PdfQA() {
     setAsking(true);
     setAnswer("");
     setAudioUrl("");
+    setBackendError("");
     try {
       const { data } = await axios.post(`${API}/ask-question/`, fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       setAnswer(data.answer || "");
-      setAudioUrl(data.audio_url || "");
+      setAudioUrl(data.audio || data.audio_url || "");
       if (data.question_used) setQuestion(data.question_used);
       toast.success("Answer ready");
     } catch (err) {
-      toast.error(err.response?.data?.error || "Ask failed");
+      const message = err?.response?.data?.error || err?.message || "Ask failed";
+      console.error("[PdfQA:ask] backend error:", err?.response?.data || err);
+      setBackendError(message);
+      toast.error(message);
     } finally {
       setAsking(false);
     }
@@ -120,6 +129,12 @@ export default function PdfQA() {
         {documentId && <p className="pdfqa-meta">Document ID: {documentId}</p>}
       </section>
 
+      {backendError && (
+        <section className="pdfqa-card pdfqa-error-card">
+          <strong>Backend error:</strong> {backendError}
+        </section>
+      )}
+
       <section className="pdfqa-card">
         <textarea
           className="pdfqa-input"
@@ -130,7 +145,7 @@ export default function PdfQA() {
         />
         <div className="pdfqa-actions">
           <button type="button" className="pdfqa-btn" disabled={asking} onClick={() => ask()}>
-            <Send size={16} /> Ask
+            <Send size={16} /> {asking ? "Asking..." : "Ask"}
           </button>
           {!recording ? (
             <button type="button" className="pdfqa-btn pdfqa-btn-mic" onClick={startRec} disabled={asking}>

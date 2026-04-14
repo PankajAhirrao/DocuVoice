@@ -23,9 +23,10 @@ def _doc_dir(doc_id: str) -> Path:
 @api_view(["POST"])
 @parser_classes([MultiPartParser, FormParser, JSONParser])
 def upload_pdf(request):
+    print(f"[upload_pdf] incoming files: {list(request.FILES.keys())}")
     f = request.FILES.get("pdf")
     if not f or not str(f.name).lower().endswith(".pdf"):
-        return JsonResponse({"error": "pdf file required"}, status=400)
+        return JsonResponse({"success": False, "error": "pdf file required"}, status=400)
     doc_id = str(uuid.uuid4())
     d = _doc_dir(doc_id)
     d.mkdir(parents=True, exist_ok=True)
@@ -35,23 +36,32 @@ def upload_pdf(request):
             out.write(chunk)
     try:
         text = rag.extract_pdf_text(dest)
+        print(f"[upload_pdf] extracted_text_length={len(text or '')}")
         n = rag.build_store(d, text)
-    except Exception as e:
+        print(f"[upload_pdf] document_id={doc_id}, chunks={n}")
+    except ValueError as e:
+        print(f"[upload_pdf] bad input error: {e}")
         shutil.rmtree(d, ignore_errors=True)
-        return JsonResponse({"error": str(e)}, status=400)
-    return JsonResponse({"document_id": doc_id, "chunks": n})
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
+    except Exception as e:
+        print(f"[upload_pdf] unexpected error: {e}", flush=True)
+        shutil.rmtree(d, ignore_errors=True)
+        return JsonResponse({"success": False, "error": f"upload failed: {e}"}, status=500)
+    return JsonResponse({"success": True, "document_id": doc_id, "chunks": n})
 
 
 @csrf_exempt
 @api_view(["POST"])
 @parser_classes([MultiPartParser, FormParser, JSONParser])
 def ask_question(request):
+    print(f"[ask_question] incoming data keys: {list(request.data.keys())}")
     doc_id = request.data.get("document_id")
+    doc_id = str(doc_id).strip() if doc_id is not None else ""
     if not doc_id:
-        return JsonResponse({"error": "document_id required"}, status=400)
+        return JsonResponse({"success": False, "error": "document_id required"}, status=400)
     d = _doc_dir(str(doc_id))
     if not (d / "index.faiss").is_file():
-        return JsonResponse({"error": "unknown document_id"}, status=404)
+        return JsonResponse({"success": False, "error": "unknown document_id"}, status=404)
 
     question = (request.data.get("question") or "").strip()
     audio = request.FILES.get("audio")
@@ -70,20 +80,37 @@ def ask_question(request):
                 pass
 
     if not question:
-        return JsonResponse({"error": "question or audio required"}, status=400)
+        return JsonResponse({"success": False, "error": "question or audio required"}, status=400)
 
     try:
         context = rag.retrieve_context(d, question)
+        print(f"[ask_question] context_length={len(context or '')}, question={question[:200]}")
         answer = generate_answer(context, question)
-        audio_rel = f"pdf_qa/{doc_id}/answer.wav"
-        audio_path = Path(settings.MEDIA_ROOT) / audio_rel
-        tts.synthesize_wav(answer[:8000], audio_path)
+        print(f"[ask_question] answer_length={len(answer or '')}")
+        audio_url = None
+        try:
+            audio_rel = f"pdf_qa/{doc_id}/answer.wav"
+            audio_path = Path(settings.MEDIA_ROOT) / audio_rel
+            tts.synthesize_wav((answer or "")[:8000], audio_path)
+            audio_url = request.build_absolute_uri(settings.MEDIA_URL + audio_rel)
+        except Exception as audio_err:
+            print(f"[ask_question] tts error: {audio_err}")
     except requests.RequestException as e:
-        return JsonResponse({"error": f"Ollama error: {e}"}, status=503)
+        print(f"[ask_question] ollama request error: {e}")
+        return JsonResponse({"success": False, "error": f"Ollama error: {e}"}, status=500)
+    except ValueError as e:
+        print(f"[ask_question] bad input error: {e}")
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        print(f"[ask_question] unexpected error: {e}", flush=True)
+        return JsonResponse({"success": False, "error": f"ask failed: {e}"}, status=500)
 
-    audio_url = request.build_absolute_uri(settings.MEDIA_URL + audio_rel)
     return JsonResponse(
-        {"answer": answer, "audio_url": audio_url, "question_used": question}
+        {
+            "success": True,
+            "answer": answer or "",
+            "audio": audio_url,
+            "audio_url": audio_url,
+            "question_used": question,
+        }
     )

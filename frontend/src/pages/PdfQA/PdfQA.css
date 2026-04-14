@@ -77,3 +77,8 @@
 .pdfqa-audio {
   width: 100%;
 }
+.pdfqa-error-card {
+  border-color: #ef4444;
+  color: #991b1b;
+  background: #fff1f2;
+}
