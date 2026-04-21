@@ -40,6 +40,7 @@ from .utilities.ieee_ai_analysis import (
     get_methodology_insights,
     extract_citations as extract_citations_ai,
     summarize_section,
+    summarize_section_with_meta,
 )
 load_dotenv()
 
@@ -180,10 +181,8 @@ def file_upload(request):
 
         print("Extracted text length:", len(full_text))
 
-        try:
-            summarized_text = summarize_section(extracted_text, section_key)
-        except Exception as e:
-            return JsonResponse({"success": False, "error": f"Summarization failed: {e}"}, status=500)
+        summary_payload = summarize_section_with_meta(extracted_text, section_key)
+        summarized_text = summary_payload.get("summary", "")
 
         # Save file metadata in the database (with extracted/summarized content)
         user_file = UserFile.objects.create(
@@ -199,6 +198,7 @@ def file_upload(request):
             "success": True,
             "document_id": str(user_file.id),
             "message": "PDF processed successfully",
+            "summary_message": summary_payload.get("message", ""),
             "file_url": f"{settings.MEDIA_URL}{file_rel_path}",
             "summarized_text": summarized_text,
             "extracted_text": extracted_text,
@@ -239,26 +239,51 @@ def api_summarize(request):
             text = uf.extracted_text or ""
             section = uf.section or "full_paper"
             if force_refresh or not (uf.summarized_text or "").strip():
-                try:
-                    summary = summarize_section(text or "", section)
-                except Exception:
-                    # Keep API stable even if model summarization fails.
-                    summary = (uf.summarized_text or "").strip() or (text or "")[:1200]
+                summary_payload = summarize_section_with_meta(text or "", section)
+                summary = summary_payload.get("summary", "")
                 uf.summarized_text = summary
                 uf.save(update_fields=["summarized_text"])
             else:
                 summary = uf.summarized_text
-            return JsonResponse({"summary": summary, "summarized_text": summary})
+                summary_payload = {
+                    "success": True,
+                    "summary": summary,
+                    "message": "Summary retrieved successfully",
+                    "fallback_used": False,
+                }
+            return JsonResponse(
+                {
+                    "success": True,
+                    "summary": summary,
+                    "summarized_text": summary,
+                    "message": summary_payload.get("message", "Summary generated"),
+                    "fallback_used": summary_payload.get("fallback_used", False),
+                }
+            )
         except UserFile.DoesNotExist:
-            return JsonResponse({"error": "Document not found"}, status=404)
+            return JsonResponse({"success": False, "error": "Document not found"}, status=404)
     if not text:
-        return JsonResponse({"summary": "", "summarized_text": ""})
+        return JsonResponse(
+            {
+                "success": True,
+                "summary": "",
+                "summarized_text": "",
+                "message": "No text available to summarize",
+                "fallback_used": True,
+            }
+        )
     section = request.data.get("section", "full_paper")
-    try:
-        summary = summarize_section(text, section)
-    except Exception:
-        summary = (text or "")[:1200]
-    return JsonResponse({"summary": summary, "summarized_text": summary})
+    summary_payload = summarize_section_with_meta(text, section)
+    summary = summary_payload.get("summary", "")
+    return JsonResponse(
+        {
+            "success": True,
+            "summary": summary,
+            "summarized_text": summary,
+            "message": summary_payload.get("message", "Summary generated"),
+            "fallback_used": summary_payload.get("fallback_used", False),
+        }
+    )
 
 
 @api_view(['POST'])

@@ -1,19 +1,25 @@
 """
-IEEE Research Paper AI Analysis using a local transformer model (no internet).
+IEEE Research Paper AI Analysis with optional local transformer model.
 Provides contributions, keywords, QA, methodology insights, and citations extraction.
 
-The model is loaded from a local directory only.
-Place a fine-tuned or base model (e.g. FLAN‑T5) into:
-    backend/models/ieee-flan-t5-small
-or set LOCAL_IEEE_MODEL_DIR environment variable.
+If the local model directory is unavailable, summarization gracefully falls back to
+a deterministic lightweight summary without crashing.
 """
 import os
 import re
 from pathlib import Path
 from typing import List
 
-import torch
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+try:
+    import torch
+except Exception:  # pragma: no cover - runtime environment dependent
+    torch = None
+
+try:
+    from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+except Exception:  # pragma: no cover - runtime environment dependent
+    AutoModelForSeq2SeqLM = None
+    AutoTokenizer = None
 
 os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -35,6 +41,9 @@ def _load_model() -> None:
     global _MODEL, _TOKENIZER, _MODEL_ERROR
     if _MODEL is not None or _MODEL_ERROR is not None:
         return
+    if AutoTokenizer is None or AutoModelForSeq2SeqLM is None:
+        _MODEL_ERROR = RuntimeError("transformers package is not available")
+        return
     model_dir = _get_model_dir()
     try:
         _TOKENIZER = AutoTokenizer.from_pretrained(model_dir, local_files_only=True)
@@ -47,11 +56,10 @@ def _load_model() -> None:
 def _generate(prompt: str, max_new_tokens: int = 180, min_new_tokens: int = 32) -> str:
     _load_model()
     if _MODEL is None or _TOKENIZER is None:
-        model_dir = _get_model_dir()
-        raise RuntimeError(
-            "Offline summarization model is not available at "
-            f"{model_dir}. Run prepare_offline_model.py once to store it locally."
-        ) from _MODEL_ERROR
+        raise RuntimeError("Offline summarization model unavailable") from _MODEL_ERROR
+
+    if torch is None:
+        raise RuntimeError("torch package is not available")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     _MODEL.to(device)
@@ -1160,12 +1168,71 @@ def summarize_section(text: str, section_key: str | None = None) -> str:
 
     Produces a short, paraphrased summary (3–4 sentences) in simple language.
     """
-    if not text or not text.strip():
+    return summarize_section_with_meta(text, section_key).get("summary", "")
+
+
+def _fallback_summary_text(text: str, max_chars: int = 800) -> str:
+    cleaned = re.sub(r"\s+", " ", (text or "")).strip()
+    if not cleaned:
         return ""
+    return cleaned[:max_chars].strip()
+
+
+def summarize_section_with_meta(text: str, section_key: str | None = None) -> dict:
+    """
+    Safe summarization wrapper.
+    Never raises; always returns a metadata-rich summary payload.
+    """
+    if not text or not text.strip():
+        return {
+            "success": True,
+            "summary": "",
+            "message": "No text available to summarize",
+            "fallback_used": True,
+        }
 
     normalized_key = (section_key or "full_paper").strip().lower()
     section_label = normalized_key.replace("_", " ").title()
-    if normalized_key == "full_paper":
-        return _summarize_full_paper(text)
-    return _summarize_abstractive(text, section_label)
+    model_dir = _get_model_dir()
+    model_available = model_dir.exists() and model_dir.is_dir()
+
+    if not model_available:
+        print("Model not found, using fallback summary")
+        return {
+            "success": True,
+            "summary": _fallback_summary_text(text, max_chars=900),
+            "message": "Fallback summary used",
+            "fallback_used": True,
+        }
+
+    try:
+        summary = (
+            _summarize_full_paper(text)
+            if normalized_key == "full_paper"
+            else _summarize_abstractive(text, section_label)
+        )
+        summary = (summary or "").strip()
+        if not summary:
+            print("Model returned empty summary, using fallback summary")
+            return {
+                "success": True,
+                "summary": _fallback_summary_text(text, max_chars=900),
+                "message": "Fallback summary used",
+                "fallback_used": True,
+            }
+        return {
+            "success": True,
+            "summary": summary,
+            "message": "Summary generated successfully",
+            "fallback_used": False,
+        }
+    except Exception as exc:
+        print("Model not found, using fallback summary")
+        print(f"Summarization error: {exc}")
+        return {
+            "success": True,
+            "summary": _fallback_summary_text(text, max_chars=900),
+            "message": "Fallback summary used",
+            "fallback_used": True,
+        }
 

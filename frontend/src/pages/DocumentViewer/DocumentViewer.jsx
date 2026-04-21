@@ -151,7 +151,12 @@ export default function DocumentViewer() {
         return;
       }
     } catch (e) {
-      const message = e?.response?.data?.detail || e?.message || "Failed to fetch analysis";
+      const message =
+        e?.response?.data?.error ||
+        e?.response?.data?.message ||
+        e?.response?.data?.detail ||
+        e?.message ||
+        "Failed to fetch analysis";
       setError(message);
     } finally {
       setLoading(false);
@@ -182,7 +187,12 @@ export default function DocumentViewer() {
         summary: data?.summary ?? data?.summarized_text ?? "",
       }));
     } catch (e) {
-      const message = e?.response?.data?.detail || e?.message || "Failed to regenerate summary";
+      const message =
+        e?.response?.data?.error ||
+        e?.response?.data?.message ||
+        e?.response?.data?.detail ||
+        e?.message ||
+        "Failed to regenerate summary";
       setError(message);
     } finally {
       setLoading(false);
