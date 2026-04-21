@@ -97,7 +97,13 @@ const UploadDocument = () => {
       }, 500);
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Error processing document: " + error.message, {
+      console.error("Backend error payload:", error?.response?.data);
+      const backendMessage =
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message ||
+        "Error processing document";
+      toast.error("Error processing document: " + backendMessage, {
         position: "top-right",
         autoClose: 3000,
       });

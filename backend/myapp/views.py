@@ -145,28 +145,45 @@ def user_logout(request):
 @permission_classes([IsAuthenticated])  # Ensure user is authenticated
 @parser_classes([MultiPartParser])  # Allow file uploads
 def file_upload(request):
-    print(request.FILES)
-    if 'file' not in request.FILES:
-        return JsonResponse({"error": "No file uploaded"}, status=400)
-
-    uploaded_file = request.FILES['file']
-    
-    # Generate a unique file name: userid_timestamp_filename
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    unique_file_name = f"{request.user.id}_{timestamp}_{uploaded_file.name}"
-    # Use forward slashes for URLs/storage keys (works on Windows too)
-    file_rel_path = f"uploads/{unique_file_name}"
-    file_abs_path = os.path.join(settings.MEDIA_ROOT, "uploads", unique_file_name)
-
-    # Save the file
-    default_storage.save(file_rel_path, ContentFile(uploaded_file.read()))
-
     try:
+        uploaded_file = request.FILES.get("file")
+        if not uploaded_file:
+            return JsonResponse({"success": False, "error": "No file uploaded"}, status=400)
+        print("File received:", uploaded_file.name)
+
+        # Generate a unique file name: userid_timestamp_filename
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        unique_file_name = f"{request.user.id}_{timestamp}_{uploaded_file.name}"
+        # Use forward slashes for URLs/storage keys (works on Windows too)
+        file_rel_path = f"uploads/{unique_file_name}"
+        file_abs_path = os.path.join(settings.MEDIA_ROOT, "uploads", unique_file_name)
+
+        # Save the file
+        default_storage.save(file_rel_path, ContentFile(uploaded_file.read()))
+
         # Get content extraction section (Full Paper, Abstract, Methodology, etc.)
         section_key = request.POST.get("section", "full_paper")
 
-        full_text, extracted_text = extract_and_analyze_section(file_abs_path, section_key)
-        summarized_text = summarize_section(extracted_text, section_key)
+        try:
+            full_text, extracted_text = extract_and_analyze_section(file_abs_path, section_key)
+        except Exception as e:
+            return JsonResponse({"success": False, "error": f"PDF text extraction failed: {e}"}, status=400)
+
+        if not (full_text or "").strip():
+            return JsonResponse({"success": False, "error": "No extractable text found in PDF"}, status=400)
+
+        if not (extracted_text or "").strip():
+            return JsonResponse(
+                {"success": False, "error": "No text found in requested section; please try full paper"},
+                status=400,
+            )
+
+        print("Extracted text length:", len(full_text))
+
+        try:
+            summarized_text = summarize_section(extracted_text, section_key)
+        except Exception as e:
+            return JsonResponse({"success": False, "error": f"Summarization failed: {e}"}, status=500)
 
         # Save file metadata in the database (with extracted/summarized content)
         user_file = UserFile.objects.create(
@@ -179,7 +196,9 @@ def file_upload(request):
         )
 
         response_data = {
-            "message": "File uploaded and section analyzed successfully!",
+            "success": True,
+            "document_id": str(user_file.id),
+            "message": "PDF processed successfully",
             "file_url": f"{settings.MEDIA_URL}{file_rel_path}",
             "summarized_text": summarized_text,
             "extracted_text": extracted_text,
@@ -189,7 +208,7 @@ def file_upload(request):
         }
         return JsonResponse(response_data, status=201)
     except Exception as e:
-        return JsonResponse({"error": f"Error extracting text: {str(e)}"}, status=500)
+        return JsonResponse({"success": False, "error": f"Error processing upload: {str(e)}"}, status=500)
 
 
 @api_view(['GET'])

@@ -27,6 +27,7 @@ def upload_pdf(request):
     f = request.FILES.get("pdf")
     if not f or not str(f.name).lower().endswith(".pdf"):
         return JsonResponse({"success": False, "error": "pdf file required"}, status=400)
+    print("File received:", f.name)
     doc_id = str(uuid.uuid4())
     d = _doc_dir(doc_id)
     d.mkdir(parents=True, exist_ok=True)
@@ -36,7 +37,9 @@ def upload_pdf(request):
             out.write(chunk)
     try:
         text = rag.extract_pdf_text(dest)
-        print(f"[upload_pdf] extracted_text_length={len(text or '')}")
+        print("Extracted text length:", len(text or ""))
+        if not (text or "").strip():
+            raise ValueError("No extractable text found in PDF")
         n = rag.build_store(d, text)
         print(f"[upload_pdf] document_id={doc_id}, chunks={n}")
     except ValueError as e:
@@ -47,7 +50,14 @@ def upload_pdf(request):
         print(f"[upload_pdf] unexpected error: {e}", flush=True)
         shutil.rmtree(d, ignore_errors=True)
         return JsonResponse({"success": False, "error": f"upload failed: {e}"}, status=500)
-    return JsonResponse({"success": True, "document_id": doc_id, "chunks": n})
+    return JsonResponse(
+        {
+            "success": True,
+            "document_id": doc_id,
+            "message": "PDF processed successfully",
+            "chunks": n,
+        }
+    )
 
 
 @csrf_exempt

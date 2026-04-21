@@ -44,19 +44,27 @@ def chunk_text(text: str, size: int = 500, overlap: int = 100) -> list[str]:
 
 
 def build_store(doc_dir: Path, text: str) -> int:
-    chunks = chunk_text(text or "")
+    try:
+        chunks = chunk_text(text or "")
+    except Exception as e:
+        raise ValueError(f"Failed to chunk extracted text: {e}") from e
+
     if not chunks:
         print("[rag.build_store] no chunks generated")
         raise ValueError("No extractable text in PDF")
-    model = get_embedder()
-    emb = model.encode(chunks, normalize_embeddings=True, show_progress_bar=False)
-    dim = int(emb.shape[1])
-    index = faiss.IndexFlatIP(dim)
-    index.add(emb.astype("float32"))
-    doc_dir.mkdir(parents=True, exist_ok=True)
-    faiss.write_index(index, str(doc_dir / "index.faiss"))
-    (doc_dir / "chunks.json").write_text(json.dumps(chunks), encoding="utf-8")
-    return len(chunks)
+
+    try:
+        model = get_embedder()
+        emb = model.encode(chunks, normalize_embeddings=True, show_progress_bar=False)
+        dim = int(emb.shape[1])
+        index = faiss.IndexFlatIP(dim)
+        index.add(emb.astype("float32"))
+        doc_dir.mkdir(parents=True, exist_ok=True)
+        faiss.write_index(index, str(doc_dir / "index.faiss"))
+        (doc_dir / "chunks.json").write_text(json.dumps(chunks), encoding="utf-8")
+        return len(chunks)
+    except Exception as e:
+        raise ValueError(f"Failed to build embeddings/index: {e}") from e
 
 
 def load_store(doc_dir: Path):

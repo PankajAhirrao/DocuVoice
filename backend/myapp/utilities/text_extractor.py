@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-import PyPDF2
+from pypdf import PdfReader
 import docx
 import pandas as pd
 import json
@@ -19,12 +19,15 @@ def extract_text_from_txt(file_path):
 
 def extract_text_from_pdf(file_path):
     """Extract text from a .pdf file."""
-    with open(file_path, 'rb') as file:
-        reader = PyPDF2.PdfReader(file)
-        text = ''
-        for page in reader.pages:
-            text += page.extract_text()
-        return text
+    try:
+        with open(file_path, 'rb') as file:
+            reader = PdfReader(file)
+            text = ""
+            for page in reader.pages:
+                text += page.extract_text() or ""
+            return text
+    except Exception as e:
+        raise ValidationError(f"Failed to read PDF file: {e}") from e
 
 def extract_text_from_docx(file_path):
     """Extract text from a .docx file."""
